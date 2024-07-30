@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Belt Tension Calculator</title>
+    <style>
+        body {
+            font-family:"Calibri", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .calculator-container {
+            background-color: #37afdd;
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 300px;
+        }
+
+        .calculator-container h1, h2 {
+            color: #ffffff;
+        }
+
+        .calculator-container label {
+            display: block;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        .calculator-container select, .calculator-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .result {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+    </style>
+    <script>
+        function calculateBeltProperties(type, width, span, registrationFactor) {
+            const properties = {
+                'GT2': {
+                    '6mm': { density: 0.00830, tension: 4 },
+                    '9mm': { density: 0.01242, tension: 6 },
+                    '12mm': { density: 0.01656, tension: 8 }
+                },
+                'GT2 EPDM': {
+                    '6mm': { density: 0.00786, tension: 4 },
+                    '9mm': { density: 0.01180, tension: 6 },
+                    '12mm': { density: 0.01572, tension: 8 }
+                },
+                'GT3': {
+                    '6mm': { density: 0.00990, tension: 10 },
+                    '9mm': { density: 0.01485, tension: 17 },
+                    '12mm': { density: 0.01980, tension: 24 }
+                }
+            };
+
+            const beltProps = properties[type][width + 'mm'];
+
+            // Calculate tension using the provided registration factor
+            const tensionLbf = registrationFactor * beltProps.tension;
+
+            // Convert tension to Newtons (1 lbf = 4.44822 N)
+            const tensionN = tensionLbf * 4.44822;
+
+            // Convert span to meters
+            const spanMeters = span / 1000;
+
+            // Frequency calculation using Mersenne's Law
+            const frequency = (1 / (2 * spanMeters)) * Math.sqrt(tensionN / beltProps.density);
+
+            return {
+                tension: tensionLbf.toFixed(2) + ' lbf',
+                frequency: frequency.toFixed(2) + ' Hz'
+            };
+        }
+
+        function updateResults() {
+            const type = document.getElementById('beltType').value;
+            const width = document.getElementById('beltWidth').value;
+            const span = parseFloat(document.getElementById('span').value);
+            const registrationFactor = parseFloat(document.getElementById('registrationFactor').value);
+
+            // Store the current input values in localStorage
+            localStorage.setItem('beltType', type);
+            localStorage.setItem('beltWidth', width);
+            localStorage.setItem('span', span);
+            localStorage.setItem('registrationFactor', registrationFactor);
+
+            // Validate input values
+            if (isNaN(span) || isNaN(registrationFactor) || span <= 0 || registrationFactor <= 0) {
+                document.getElementById('tensionResult').innerText = '0.00 lbf';
+                document.getElementById('frequencyResult').innerText = '0.00 Hz';
+                return;
+            }
+
+            const result = calculateBeltProperties(type, width, span, registrationFactor);
+
+            document.getElementById('tensionResult').innerText = result.tension;
+            document.getElementById('frequencyResult').innerText = result.frequency;
+        }
+
+        function loadDefaults() {
+            const defaultType = 'GT3';
+            const defaultWidth = '6';
+            const defaultSpan = 200;
+            const defaultRegistrationFactor = 1.5;
+
+            // Load stored values or use default values
+            const type = localStorage.getItem('beltType') || defaultType;
+            const width = localStorage.getItem('beltWidth') || defaultWidth;
+            const span = localStorage.getItem('span') || defaultSpan;
+            const registrationFactor = localStorage.getItem('registrationFactor') || defaultRegistrationFactor;
+
+            document.getElementById('beltType').value = type;
+            document.getElementById('beltWidth').value = width;
+            document.getElementById('span').value = span;
+            document.getElementById('registrationFactor').value = registrationFactor;
+
+            updateResults();
+        }
+
+        window.onload = loadDefaults;
+    </script>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Belt Tension Calculator</h1>
+        <form oninput="updateResults()">
+            <label for="beltType">Belt Type:</label>
+            <select id="beltType" name="beltType">
+                <option value="GT2">GT2</option>
+                <option value="GT2 EPDM">GT2 EPDM</option>
+                <option value="GT3">GT3</option>
+            </select>
+
+            <label for="beltWidth">Belt Width:</label>
+            <select id="beltWidth" name="beltWidth">
+                <option value="6">6mm</option>
+                <option value="9">9mm</option>
+                <option value="12">12mm</option>
+            </select>
+
+            <label for="span">Belt Free Span Length (mm):</label>
+            <input type="number" id="span" name="span" value="200">
+
+            <label for="registrationFactor">Registration Drive Factor (1..2):</label>
+            <input type="number" step="0.01" id="registrationFactor" name="registrationFactor" value="1.75">
+
+            <h2>Results</h2>
+            <div class="result">
+                <p>Tension: <span id="tensionResult">0.00 lbf</span></p>
+                <p>Plucked Belt Frequency: <span id="frequencyResult">0.00 Hz</span></p>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
