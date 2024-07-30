@@ -133,7 +133,7 @@
             const defaultType = 'GT3';
             const defaultWidth = '6';
             const defaultSpan = 200;
-            const defaultRegistrationFactor = 1.5;
+            const defaultRegistrationFactor = 1;
 
             // Load stored values or use default values
             const type = localStorage.getItem('beltType') || defaultType;
@@ -174,10 +174,10 @@
             </select>
 
             <label for="span">Belt Free Span Length (mm):</label>
-            <input type="number" id="span" name="span" value="200">
+            <input type="number" inputmode="numeric id="span" name="span" value="200">
 
             <label for="registrationFactor">Registration Drive Factor (1..2):</label>
-            <input type="number" step="0.01" id="registrationFactor" name="registrationFactor" value="1.75">
+            <input type="number" inputmode="numeric step="0.05" id="registrationFactor" name="registrationFactor" value="1.75">
 
             <h2>Results</h2>
             <div class="result">
