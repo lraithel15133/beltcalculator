@@ -23,6 +23,18 @@
             width: 300px;
         }
 
+        .title-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .title-container img {
+            margin-left: 10px;
+            width: 100px;
+            height: auto;
+        }
+
         .calculator-container h1, h2 {
             color: #ffffff;
         }
@@ -142,7 +154,10 @@
 </head>
 <body>
     <div class="calculator-container">
-        <h1>Belt Tension Calculator</h1>
+        <div class="title-container">
+            <h1>Belt Tension Calculator</h1>
+            <img src="lllogo.png" alt="Logo">
+        </div>
         <form oninput="updateResults()">
             <label for="beltType">Belt Type:</label>
             <select id="beltType" name="beltType">
