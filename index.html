@@ -64,6 +64,42 @@
             margin-top: 20px;
         }
     </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <div class="title-container">
+            <h1>Belt Tension Calculator</h1>
+            <img src="lllogo.png" alt="Logo">
+        </div>
+        <form oninput="updateResults()">
+            <label for="beltType">Belt Type:</label>
+            <select id="beltType" name="beltType">
+                <option value="GT2">GT2</option>
+                <option value="GT2 EPDM">GT2 EPDM</option>
+                <option value="GT3">GT3</option>
+            </select>
+
+            <label for="beltWidth">Belt Width:</label>
+            <select id="beltWidth" name="beltWidth">
+                <option value="6">6mm</option>
+                <option value="9">9mm</option>
+                <option value="12">12mm</option>
+            </select>
+
+            <label for="span">Belt Free Span Length (mm):</label>
+            <input type="number" id="span" name="span" value="200" inputmode="numeric" pattern="[0-9]*">
+
+            <label for="registrationFactor">Registration Drive Factor (1..2):</label>
+            <input type="number" step="0.05" id="registrationFactor" name="registrationFactor" value="1.75" inputmode="decimal" pattern="[0-9]*">
+
+            <h2>Results</h2>
+            <div class="result">
+                <p>Tension: <span id="tensionResult">0.00 lbf</span></p>
+                <p>Plucked Belt Frequency: <span id="frequencyResult">0.00 Hz</span></p>
+            </div>
+        </form>
+    </div>
+
     <script>
         function calculateBeltProperties(type, width, span, registrationFactor) {
             const properties = {
@@ -133,7 +169,7 @@
             const defaultType = 'GT3';
             const defaultWidth = '6';
             const defaultSpan = 200;
-            const defaultRegistrationFactor = 1;
+            const defaultRegistrationFactor = 1.5;
 
             // Load stored values or use default values
             const type = localStorage.getItem('beltType') || defaultType;
@@ -151,40 +187,5 @@
 
         window.onload = loadDefaults;
     </script>
-</head>
-<body>
-    <div class="calculator-container">
-        <div class="title-container">
-            <h1>Belt Tension Calculator</h1>
-            <img src="lllogo.png" alt="Logo">
-        </div>
-        <form oninput="updateResults()">
-            <label for="beltType">Belt Type:</label>
-            <select id="beltType" name="beltType">
-                <option value="GT2">GT2</option>
-                <option value="GT2 EPDM">GT2 EPDM</option>
-                <option value="GT3">GT3</option>
-            </select>
-
-            <label for="beltWidth">Belt Width:</label>
-            <select id="beltWidth" name="beltWidth">
-                <option value="6">6mm</option>
-                <option value="9">9mm</option>
-                <option value="12">12mm</option>
-            </select>
-
-            <label for="span">Belt Free Span Length (mm):</label>
-            <input type="number" inputmode="numeric id="span" name="span" value="200">
-
-            <label for="registrationFactor">Registration Drive Factor (1..2):</label>
-            <input type="number" inputmode="numeric step="0.05" id="registrationFactor" name="registrationFactor" value="1.75">
-
-            <h2>Results</h2>
-            <div class="result">
-                <p>Tension: <span id="tensionResult">0.00 lbf</span></p>
-                <p>Plucked Belt Frequency: <span id="frequencyResult">0.00 Hz</span></p>
-            </div>
-        </form>
-    </div>
 </body>
 </html>
