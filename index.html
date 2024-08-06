@@ -161,8 +161,8 @@
 
             const result = calculateBeltProperties(type, width, span, registrationFactor);
 
-            document.getElementById('tensionResult').innerText = result.tension;
-            document.getElementById('frequencyResult').innerText = result.frequency;
+            document.getElementById('tensionResult').innerText = result.tension.toFixed(2);
+            document.getElementById('frequencyResult').innerText = result.frequency.toFixed(2);
         }
 
         function loadDefaults() {
