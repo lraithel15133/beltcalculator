@@ -135,8 +135,8 @@
             const frequency = (1 / (2 * spanMeters)) * Math.sqrt(tensionN / beltProps.density);
 
             return {
-                tension: tensionLbf.toFixed(2) + ' lbf',
-                frequency: frequency.toFixed(2) + ' Hz'
+                tension: tensionLbf.toFixed(1) + ' lbf',
+                frequency: frequency.toFixed(1) + ' Hz'
             };
         }
 
@@ -161,8 +161,8 @@
 
             const result = calculateBeltProperties(type, width, span, registrationFactor);
 
-            document.getElementById('tensionResult').innerText = result.tension.toFixed(2);
-            document.getElementById('frequencyResult').innerText = result.frequency.toFixed(2);
+            document.getElementById('tensionResult').innerText = result.tension;
+            document.getElementById('frequencyResult').innerText = result.frequency;
         }
 
         function loadDefaults() {
