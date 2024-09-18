@@ -231,6 +231,13 @@
             return 1.0;
         }
 
+        /**
+         * shaftDiameter -- Motor shaft diameter in mm
+         * shaftShape -- D cut vs round
+         * shaftLength -- Either from motor face to end, or motor face to support bearing face, in mm
+         * distanceToCenterline -- Distance from motor face to the centerline of the belt, in mm
+         * tension -- Belt tension, in lbs
+         */
         function calculateShaftProperties(shaftDiameter, shaftShape, shaftLength, distanceToCenterline, tension) {
             const steelProperties = { // Assuming 304 Stainless Steel for simplicity
                 'YoungsModulus'   : 195, // GPa
