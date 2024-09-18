@@ -54,6 +54,11 @@
             box-sizing: border-box;
         }
 
+        .advanced-section h3 {
+            cursor: pointer;
+            user-select: none;
+        }
+
         .result {
             background-color: #ffffff;
             color: #000000;
@@ -92,10 +97,43 @@
             <label for="registrationFactor">Registration Drive Factor (.5..2):</label>
             <input type="number" step="0.05" id="registrationFactor" name="registrationFactor" value="1.00" inputmode="decimal" pattern="[0-9]*">
 
+            <div class="advanced-section">
+                <h3 onclick="toggleAdvanced()">
+                    Advanced <span id="arrow">▶</span>
+                </h3>
+                <div id="advancedOptions" style="display:none;">
+                    <label for="supportBearing">Support Bearing:</label>
+                    <select id="supportBearing" name="supportBearing">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+
+                    <label for="shaftDiameter">Shaft Diameter:</label>
+                    <select id="shaftDiameter" name="shaftDiameter">
+                        <option value="5">5mm</option>
+                        <option value="8">8mm</option>
+                    </select>
+
+                    <label for="shaftShape">Shaft Shape:</label>
+                    <select id="shaftShape" name="shaftShape">
+                        <option value="round">Round Shaft</option>
+                        <option value="dCut">D Cut Shaft</option>
+                    </select>
+
+                    <label for="shaftLength">Shaft Length (mm):</label>
+                    <input type="number" step="1" id="shaftLength" name="shaftLength" value="20" inputmode="decimal" pattern="[0-9]*">
+
+                    <label for="distanceToCenterline">Distance to Belt Centerline (mm):</label>
+                    <input type="number" step="1" id="distanceToCenterline" name="distanceToCenterline" value="12" inputmode="decimal" pattern="[0-9]*">
+
+                </div>
+            </div>
+
             <h2>Results</h2>
             <div class="result">
                 <p>Tension: <span id="tensionResult">0.00 lbf</span></p>
                 <p>Plucked Belt Frequency: <span id="frequencyResult">0.00 Hz</span></p>
+                <p>Shaft Fatigue Safety Factor: <span id="shaftFatigueSafetyFactor">1.0</span></span></p>
             </div>
         </form>
     </div>
@@ -135,8 +173,64 @@
             const frequency = (1 / (2 * spanMeters)) * Math.sqrt(tensionN / beltProps.density);
 
             return {
-                tension: tensionLbf.toFixed(1) + ' lbf',
-                frequency: frequency.toFixed(1) + ' Hz'
+                tension: tensionLbf.toFixed(1),
+                frequency: frequency.toFixed(1)
+            };
+        }
+
+        function getShaftShapeModifier(shaftDiameter, shaftShape) {
+            if(shaftShape === 'dCut') {
+                if(shaftDiameter == '5mm') {
+                    return 0.713;
+                } else { // 8mm
+                    return shaftShapeModifier = 0.88;
+                }
+            } // Else it's round
+            return 1.0;
+        }
+
+        function calculateShaftProperties(shaftDiameter, shaftShape, shaftLength, distanceToCenterline, tension) {
+            const steelProperties = { // Assuming 304 Stainless Steel for simplicity
+                'YoungsModulus'   : 195, // GPa
+                'YieldStrength'   : 293, // MPa
+                'FatigueStrength' : 240, // MPa-N/mm^2, https://bssa.org.uk/bssa_articles/fatigue-properties-and-endurance-limits-of-stainless-steels/
+            };
+            const beltWrapAngle = Math.PI; // Radians, most pessimistic assumption
+
+            tensionN = tension * 4.44822;
+
+            const forceOnShaft = Math.sqrt(2 * Math.pow(tensionN,2) - 2 * Math.pow(tensionN,2) * Math.cos(beltWrapAngle)); // R = sqrt(a^2 + b^2 + 2ab * cos(theta))
+            const shaftShapeModifier = getShaftShapeModifier(shaftDiameter, shaftShape);
+            const secondMomentOfArea /* mm^4 */ = Math.PI / 4 * Math.pow(shaftDiameter / 2,4) * shaftShapeModifier;
+
+            const singleShearDeflection /* μm */ = forceOnShaft
+                                            * (Math.pow(distanceToCenterline,2) * (2 * shaftLength - distanceToCenterline))
+                                            / (6 * steelProperties.YoungsModulus * 1000 * secondMomentOfArea) * 1000;
+            
+            const singleShearMaxStress /* MPa */ = forceOnShaft * distanceToCenterline / 1000 * (shaftDiameter / 2) / secondMomentOfArea * 1000;
+            const singleShearSafetyFactor = steelProperties.YieldStrength / singleShearMaxStress;
+            const singleShearFatigueSafetyFactor = singleShearSafetyFactor / 2.0;
+
+            const doubleShearDeflection /* μm */ = forceOnShaft * distanceToCenterline
+                                            * (2 * Math.pow(shaftLength,2) - 4 * Math.pow(shaftLength - distanceToCenterline,2))
+                                            / (48 * steelProperties.YoungsModulus * 1000 * secondMomentOfArea) * 1000;
+            const doubleShearMaxShaftSpan = Math.max(shaftLength - distanceToCenterline, distanceToCenterline);
+            const doubleShearMaxStress /* MPa */ = forceOnShaft
+                                            * (doubleShearMaxShaftSpan / 1000)
+                                            * Math.pow(Math.pow(shaftLength,2) - Math.pow(doubleShearMaxShaftSpan / 1000,2),(3/2))
+                                            / (9 * Math.sqrt(3) * shaftLength / 1000 * steelProperties.YoungsModulus * secondMomentOfArea);
+            const doubleShearSafetyFactor = steelProperties.YieldStrength / doubleShearMaxStress;
+            const doubleShearFatigueSafetyFactor = doubleShearSafetyFactor / 2;
+
+            return {
+                singleShearDeflection: singleShearDeflection.toFixed(1) + ' μm',
+                singleShearMaxStress: doubleShearMaxStress.toFixed(1) + ' MPa',
+                singleShearSafetyFactor: singleShearSafetyFactor.toFixed(1),
+                singleShearFatigueSafetyFactor: singleShearFatigueSafetyFactor.toFixed(1),
+                doubleShearDeflection: doubleShearDeflection.toFixed(1) + 'μm',
+                doubleShearMaxStress: doubleShearMaxStress.toFixed(1) + ' MPa',
+                doubleShearSafetyFactor: doubleShearSafetyFactor.toFixed(1),
+                doubleShearFatigueSafetyFactor: doubleShearFatigueSafetyFactor.toFixed(1),
             };
         }
 
@@ -145,6 +239,11 @@
             const width = document.getElementById('beltWidth').value;
             const span = parseFloat(document.getElementById('span').value);
             const registrationFactor = parseFloat(document.getElementById('registrationFactor').value);
+            const supportBearing = document.getElementById('supportBearing').value;
+            const shaftDiameter = document.getElementById('shaftDiameter').value;
+            const shaftShape = document.getElementById('shaftShape').value;
+            const shaftLength = parseFloat(document.getElementById('shaftLength').value);
+            const distanceToCenterline = parseFloat(document.getElementById('distanceToCenterline').value);
 
             // Store the current input values in localStorage
             localStorage.setItem('beltType', type);
@@ -159,10 +258,12 @@
                 return;
             }
 
-            const result = calculateBeltProperties(type, width, span, registrationFactor);
+            const beltResult = calculateBeltProperties(type, width, span, registrationFactor);
+            const shaftResult = calculateShaftProperties(shaftDiameter, shaftShape, shaftLength, distanceToCenterline, beltResult.tension);
 
-            document.getElementById('tensionResult').innerText = result.tension;
-            document.getElementById('frequencyResult').innerText = result.frequency;
+            document.getElementById('tensionResult').innerText = beltResult.tension  + ' lbf';
+            document.getElementById('frequencyResult').innerText = beltResult.frequency  + ' Hz';
+            document.getElementById('shaftFatigueSafetyFactor').innerText = supportBearing == "yes" ? shaftResult.doubleShearFatigueSafetyFactor : shaftResult.singleShearFatigueSafetyFactor;
         }
 
         function loadDefaults() {
@@ -170,22 +271,44 @@
             const defaultWidth = '6';
             const defaultSpan = 200;
             const defaultRegistrationFactor = 1.5;
+            const defaultSupportBearing = 'no';
+            const defaultShaftDiameter = "5";
+            const defaultShaftShape = 'dCut';
 
             // Load stored values or use default values
             const type = localStorage.getItem('beltType') || defaultType;
             const width = localStorage.getItem('beltWidth') || defaultWidth;
             const span = localStorage.getItem('span') || defaultSpan;
+            const supportBearing = localStorage.getItem('supportBearing') || defaultSupportBearing;
             const registrationFactor = localStorage.getItem('registrationFactor') || defaultRegistrationFactor;
+            const shaftDiameter = localStorage.getItem('shaftDiameter') || defaultShaftDiameter;
+            const shaftShape = localStorage.getItem('shaftShape') || defaultShaftShape;
 
             document.getElementById('beltType').value = type;
             document.getElementById('beltWidth').value = width;
             document.getElementById('span').value = span;
+            document.getElementById('supportBearing').value = supportBearing;
             document.getElementById('registrationFactor').value = registrationFactor;
+            document.getElementById('shaftDiameter').value = shaftDiameter;
+            document.getElementById('shaftShape').value = shaftShape;
 
             updateResults();
         }
 
         window.onload = loadDefaults;
+    
+    function toggleAdvanced() {
+        const advancedOptions = document.getElementById('advancedOptions');
+        const arrow = document.getElementById('arrow');
+        
+        if (advancedOptions.style.display === 'none') {
+            advancedOptions.style.display = 'block';
+            arrow.textContent = '▼';  // Down-pointing arrow
+        } else {
+            advancedOptions.style.display = 'none';
+            arrow.textContent = '▶';  // Right-pointing arrow
+        }
+    }
     </script>
 </body>
 </html>
