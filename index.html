@@ -68,10 +68,15 @@
             font-size: 1.2em;
             margin-top: 20px;
         }
+
+        .bold {
+            font-weight: 700;
+        }
         
         field.line-item {
             display: grid;
         }
+
         @media (min-width: 500px) {
         	form {
 		        max-width: 500px;
@@ -170,7 +175,7 @@
             <div class="result">
                 <p>Tension: <span id="tensionResult">0.00 lbf</span></p>
                 <p>Plucked Belt Frequency: <span id="frequencyResult">0.00 Hz</span></p>
-                <p>Shaft Fatigue Safety Factor: <span id="shaftFatigueSafetyFactor">1.0</span></span></p>
+                <p>Shaft Fatigue Safety Factor: <span class="bold" id="shaftFatigueSafetyFactor">1.0</span></span></p>
             </div>
         </form>
     </div>
@@ -300,7 +305,18 @@
 
             document.getElementById('tensionResult').innerText = beltResult.tension  + ' lbf';
             document.getElementById('frequencyResult').innerText = beltResult.frequency  + ' Hz';
-            document.getElementById('shaftFatigueSafetyFactor').innerText = supportBearing == "yes" ? shaftResult.doubleShearFatigueSafetyFactor : shaftResult.singleShearFatigueSafetyFactor;
+
+            safetyFactor = supportBearing == "yes" ? shaftResult.doubleShearFatigueSafetyFactor : shaftResult.singleShearFatigueSafetyFactor;
+
+            safetyResult = document.getElementById('shaftFatigueSafetyFactor');
+            if(safetyFactor <= 2.0) {
+                safetyResult.style.color = "red";
+            } else if(safetyFactor < 3.0) {
+                safetyResult.style.color = "orange";
+            } else {
+                safetyResult.style.color = "black";
+            }
+            safetyResult.innerText = safetyFactor;
         }
 
         function loadDefaults() {
